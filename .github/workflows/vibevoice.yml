@@ -8,10 +8,15 @@ on:
         type: string
         default: 'Hello, I am Adwa. This is voice powered by VibeVoice on GitHub Actions.'
       voice:
-        description: 'Speaker voice'
+        description: 'Speaker voice (or leave default for preset)'
         required: false
         type: string
         default: 'en-Maya_woman'
+      ref_audio_url:
+        description: 'URL to reference audio for voice cloning (10-30s WAV/MP3)'
+        required: false
+        type: string
+        default: ''
       model:
         description: 'Model ID'
         required: false
@@ -48,6 +53,8 @@ jobs:
           VOICE_TEXT: ${{ inputs.text }}
           VOICE_OUTPUT: vibevoice_output.wav
           VOICE_MODEL: ${{ inputs.model }}
+          VOICE_NAME: ${{ inputs.voice }}
+          VOICE_REF_URL: ${{ inputs.ref_audio_url }}
           HF_HUB_ENABLE_HF_TRANSFER: 1
         run: python generate.py
       
