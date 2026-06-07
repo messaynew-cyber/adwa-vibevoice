@@ -41,8 +41,9 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torchaudio --index-url https://download.pytorch.org/whl/cpu
           pip install TTS soundfile edge-tts
-          echo "Coqui TTS installed"
+          echo "Coqui TTS + torchaudio installed"
       
       - name: Generate speech
         env:
