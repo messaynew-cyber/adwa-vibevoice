@@ -1,0 +1,56 @@
+name: VibeVoice TTS
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: 'Text to convert to speech'
+        required: true
+        type: string
+        default: 'Hello, I am Adwa. This is voice powered by VibeVoice on GitHub Actions.'
+      voice:
+        description: 'Speaker voice'
+        required: false
+        type: string
+        default: 'en-Maya_woman'
+      model:
+        description: 'Model ID'
+        required: false
+        type: choice
+        options:
+          - microsoft/VibeVoice-Realtime-0.5B
+          - microsoft/VibeVoice-1.5B
+        default: 'microsoft/VibeVoice-Realtime-0.5B'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers accelerate soundfile huggingface_hub edge-tts
+          # Try vibevoice community package
+          pip install vibevoice 2>/dev/null || echo "vibevoice pip not available, using transformers"
+      
+      - name: Generate speech
+        env:
+          VOICE_TEXT: ${{ inputs.text }}
+          VOICE_OUTPUT: vibevoice_output.wav
+          VOICE_MODEL: ${{ inputs.model }}
+          HF_HUB_ENABLE_HF_TRANSFER: 1
+        run: python generate.py
+      
+      - name: Upload audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: vibevoice-audio
+          path: vibevoice_output.wav
+          retention-days: 7
