@@ -29,7 +29,7 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       
@@ -37,16 +37,12 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Install dependencies
+      - name: Install Coqui TTS
         run: |
           pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install soundfile huggingface_hub edge-tts
-          
-          # Clone VibeVoice community repo and install
-          git clone https://github.com/vibevoice-community/VibeVoice.git /tmp/vibevoice
-          cd /tmp/vibevoice
-          pip install -e . 2>/dev/null || pip install -r requirements.txt 2>/dev/null || echo "VibeVoice install failed, falling back to edge-tts"
+          pip install TTS soundfile edge-tts
+          echo "Coqui TTS installed"
       
       - name: Generate speech
         env:
