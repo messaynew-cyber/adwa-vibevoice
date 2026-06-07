@@ -42,6 +42,7 @@ jobs:
           pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install torchaudio --index-url https://download.pytorch.org/whl/cpu
+          export COQUI_STUDIO_AGREED=1
           pip install TTS soundfile edge-tts
           echo "Coqui TTS + torchaudio installed"
       

@@ -32,6 +32,7 @@ try:
     print("Loading Coqui TTS XTTS v2...")
     
     # Use the TTS API
+    os.environ["COQUI_STUDIO_AGREED"] = "1"
     from TTS.api import TTS
     
     # Load XTTS v2 model
