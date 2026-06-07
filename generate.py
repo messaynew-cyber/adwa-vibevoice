@@ -30,7 +30,24 @@ except ImportError:
 except Exception as e:
     print(f"vibevoice package failed: {e}")
 
-# ── Approach 2: Direct transformers ──
+# ── Approach 2: Community repo installation ──
+try:
+    print("Trying community VibeVoice repo...")
+    sys.path.insert(0, '/tmp/vibevoice')
+    from vibevoice import VibeVoice
+    
+    vv = VibeVoice.from_pretrained(MODEL_ID)
+    audio = vv.generate(TEXT, voice="en-Maya_woman")
+    
+    import soundfile as sf
+    sf.write(OUTPUT, audio, vv.sample_rate)
+    print(f"✅ Generated via community VibeVoice in {time.time()-start:.0f}s")
+    print(f"Output: {OUTPUT} ({os.path.getsize(OUTPUT)/1024:.0f}KB)")
+    sys.exit(0)
+except ImportError:
+    print("Community VibeVoice not available...")
+except Exception as e:
+    print(f"Community VibeVoice failed: {e}")
 try:
     import torch
     from transformers import AutoModel, AutoProcessor
