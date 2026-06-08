@@ -17,11 +17,19 @@ ref_path = None
 if REF_AUDIO_URL:
     try:
         ref_path = "/tmp/reference.wav"
+        print(f"Downloading {REF_AUDIO_URL[:60]}...")
         urllib.request.urlretrieve(REF_AUDIO_URL, "/tmp/ref_raw")
-        subprocess.run(["ffmpeg", "-y", "-i", "/tmp/ref_raw", "-ar", "16000", "-ac", "1", "-t", "10", ref_path], capture_output=True, timeout=30)
-        print(f"Reference: {os.path.getsize(ref_path)/1024:.0f}KB")
+        raw_size = os.path.getsize("/tmp/ref_raw")
+        print(f"Raw: {raw_size/1024:.0f}KB")
+        result = subprocess.run(["ffmpeg", "-y", "-i", "/tmp/ref_raw", "-ar", "16000", "-ac", "1", "-t", "10", ref_path], capture_output=True, timeout=30)
+        if os.path.exists(ref_path):
+            print(f"Reference ready: {os.path.getsize(ref_path)/1024:.0f}KB")
+        else:
+            print(f"ffmpeg failed: {result.stderr.decode()[:200]}")
+            ref_path = None
     except Exception as e:
-        print(f"Reference failed: {e}")
+        print(f"Reference error: {e}")
+        ref_path = None
 
 # ── Pocket TTS ──
 try:
@@ -35,8 +43,7 @@ try:
         print("Cloning voice from reference...")
         voice_state = model.get_state_for_audio_prompt(ref_path)
     else:
-        print("Using built-in voice...")
-        voice_state = model.get_state_for_voice("alba")
+        raise Exception("No reference audio available for cloning")
     
     gen_start = time.time()
     audio = model.generate_audio(voice_state, TEXT)
