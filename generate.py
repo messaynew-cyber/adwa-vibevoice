@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Coqui TTS with XTTS v2 voice cloning — GitHub Actions (16GB RAM, CPU)."""
-import os, sys, time, subprocess, urllib.request, json
+"""Pocket TTS — CPU-native voice cloning. 100M params, 5s reference audio → clone."""
+import os, sys, time, subprocess, urllib.request
 
 TEXT = os.environ.get("VOICE_TEXT", "Hello world.")
-OUTPUT = os.environ.get("VOICE_OUTPUT", "coqui_output.wav")
+OUTPUT = os.environ.get("VOICE_OUTPUT", "pocket_output.wav")
 REF_AUDIO_URL = os.environ.get("VOICE_REF_URL", "")
 
 print(f"Text: {TEXT[:100]}...")
@@ -12,7 +12,7 @@ if REF_AUDIO_URL:
 
 start = time.time()
 
-# ── Step 0: Download reference audio ──
+# ── Download reference audio ──
 ref_path = None
 if REF_AUDIO_URL:
     try:
@@ -20,56 +20,40 @@ if REF_AUDIO_URL:
         urllib.request.urlretrieve(REF_AUDIO_URL, "/tmp/ref_raw")
         subprocess.run([
             "ffmpeg", "-y", "-i", "/tmp/ref_raw",
-            "-ar", "22050", "-ac", "1", "-t", "15", ref_path
+            "-ar", "16000", "-ac", "1", "-t", "10", ref_path
         ], capture_output=True, timeout=30)
-        print(f"Reference ready: {os.path.getsize(ref_path)/1024:.0f}KB")
+        print(f"Reference: {os.path.getsize(ref_path)/1024:.0f}KB")
     except Exception as e:
-        print(f"Reference download failed: {e}")
+        print(f"Reference failed: {e}")
         ref_path = None
 
-# ── Coqui TTS XTTS v2 ──
+# ── Pocket TTS ──
 try:
-    print("Loading Coqui TTS XTTS v2...")
+    print("Loading Pocket TTS...")
+    from pocket_tts import PocketTTS
     
-    # Use the TTS API
-    os.environ["COQUI_STUDIO_AGREED"] = "1"
-    from TTS.api import TTS
-    
-    # Load XTTS v2 model
-    model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
-    tts = TTS(model_name=model_name, progress_bar=False)
-    
-    print(f"Model loaded in {time.time()-start:.0f}s. Generating...")
+    tts = PocketTTS()
+    print(f"Loaded in {time.time()-start:.0f}s. Generating...")
     
     gen_start = time.time()
-    
     if ref_path:
-        # Voice cloning: use reference audio as speaker
-        tts.tts_to_file(
-            text=TEXT,
-            speaker_wav=ref_path,
-            language="en",
-            file_path=OUTPUT
-        )
+        tts.synthesize(TEXT, speaker_audio=ref_path, output_path=OUTPUT)
         print(f"✅ CLONED VOICE in {time.time()-gen_start:.0f}s")
     else:
-        # Use a built-in voice
-        tts.tts_to_file(text=TEXT, file_path=OUTPUT)
+        tts.synthesize(TEXT, output_path=OUTPUT)
         print(f"✅ Generated in {time.time()-gen_start:.0f}s")
     
     size_kb = os.path.getsize(OUTPUT) / 1024
     print(f"Output: {OUTPUT} ({size_kb:.0f}KB)")
-    print(f"Total time: {time.time()-start:.0f}s")
+    print(f"Total: {time.time()-start:.0f}s")
     sys.exit(0)
-    
 except Exception as e:
-    print(f"Coqui TTS failed: {e}")
+    print(f"Pocket TTS failed: {e}")
 
 # ── Fallback: edge-tts ──
-print("Coqui unavailable — edge-tts fallback...")
+print("Pocket TTS unavailable — edge-tts fallback...")
 subprocess.run([
     "edge-tts", "--voice", "en-US-MichelleNeural", "--rate", "+5%",
     "--text", TEXT, "--write-media", OUTPUT
 ], check=True, timeout=60)
-print(f"✅ edge-tts fallback")
-print(f"Output: {OUTPUT} ({os.path.getsize(OUTPUT)/1024:.0f}KB)")
+print(f"✅ edge-tts ({os.path.getsize(OUTPUT)/1024:.0f}KB)")
